@@ -38,16 +38,16 @@ func (f F) Format(s fmt.State, c rune) {
 	fmt.Fprintf(s, "F(%d)", int(f))
 }
 
-type Stringer struct { i int }
+type StringerStruct struct{ i int }
 
-func (s *Stringer) String() string { return "foo" }
+func (s *StringerStruct) String() string { return "foo" }
 
 var long = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var passthrough = []passtest{
 	{1, "%d", "1"},
 	{"a", "%s", "a"},
-	{&Stringer{}, "%s", "foo"},
+	{&StringerStruct{}, "%s", "foo"},
 }
 
 func TestPassthrough(t *testing.T) {

@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"text/tabwriter"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/kr/text"
 )
@@ -14,6 +16,10 @@ type formatter struct {
 	v     reflect.Value
 	force bool
 	quote bool
+}
+
+type Stringer interface {
+	String() string
 }
 
 // Formatter makes a wrapper, f, that will format x as go source with line
@@ -97,6 +103,13 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 		return
 	}
 
+	if !debugMode && v.CanInterface() {
+		if stringer, ok := v.Interface().(Stringer); ok {
+			p.printInline(v, stringer.String(), false)
+			return
+		}
+	}
+
 	switch v.Kind() {
 	case reflect.Bool:
 		p.printInline(v, v.Bool(), showType)
@@ -170,19 +183,22 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			}
 			for i := 0; i < v.NumField(); i++ {
 				showTypeInStruct := true
-				if f := t.Field(i); f.Name != "" {
-					io.WriteString(pp, f.Name)
-					writeByte(pp, ':')
-					if expand {
-						writeByte(pp, '\t')
+				f := t.Field(i)
+				if !debugMode && isExported(f.Name) {
+					if f.Name != "" {
+						io.WriteString(pp, f.Name)
+						writeByte(pp, ':')
+						if expand {
+							writeByte(pp, '\t')
+						}
+						showTypeInStruct = labelType(f.Type)
 					}
-					showTypeInStruct = labelType(f.Type)
-				}
-				pp.printValue(getField(v, i), showTypeInStruct, true)
-				if expand {
-					io.WriteString(pp, ",\n")
-				} else if i < v.NumField()-1 {
-					io.WriteString(pp, ", ")
+					pp.printValue(getField(v, i), showTypeInStruct, true)
+					if expand {
+						io.WriteString(pp, ",\n")
+					} else if i < v.NumField()-1 {
+						io.WriteString(pp, ", ")
+					}
 				}
 			}
 			if expand {
@@ -305,6 +321,11 @@ func labelType(t reflect.Type) bool {
 		return true
 	}
 	return false
+}
+
+func isExported(name string) bool {
+	ch, _ := utf8.DecodeRuneInString(name)
+	return unicode.IsUpper(ch)
 }
 
 func (p *printer) fmtString(s string, quote bool) {

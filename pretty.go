@@ -14,6 +14,16 @@ import (
 	"reflect"
 )
 
+var debugMode bool
+
+// SetDebugMode sets the debug mode of the global
+// printer. If debug mode is true, the String
+// method will not be called on any type, and
+// unexported fields will be printed.
+func SetDebugMode(mode bool) {
+	debugMode = mode
+}
+
 // Errorf is a convenience wrapper for fmt.Errorf.
 //
 // Calling Errorf(f, x, y) is equivalent to
