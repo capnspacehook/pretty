@@ -184,7 +184,7 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			for i := 0; i < v.NumField(); i++ {
 				showTypeInStruct := true
 				f := t.Field(i)
-				if !debugMode && isExported(f.Name) {
+				if (!debugMode && isExported(f.Name)) || debugMode {
 					if f.Name != "" {
 						io.WriteString(pp, f.Name)
 						writeByte(pp, ':')
